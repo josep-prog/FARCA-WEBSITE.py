@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Event Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">{{ event.event_name }}</h1>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="row g-0">
+            <div class="col-md-6">
+                <!-- Placeholder for Event Image -->
+                {% if event.image_url %}
+                <img src="{{ event.image_url }}" alt="{{ event.event_name }}" class="img-fluid rounded-start">
+                {% else %}
+                <img src="https://via.placeholder.com/600x400?text=Event+Image" alt="Event Image" class="img-fluid rounded-start">
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <div class="card-body">
+                    <h5 class="card-title">Event Description</h5>
+                    <p class="card-text">{{ event.description }}</p>
+                    <p class="card-text"><strong>Date:</strong> {{ event.event_date.strftime('%d %B %Y') }}</p>
+                    <p class="card-text"><strong>Time:</strong> {{ event.event_time }}</p>
+                    <p class="card-text"><strong>Location:</strong> FARCA Resto-Bar, Rusizi District</p>
+                    <hr>
+                    <h6>Highlights:</h6>
+                    <ul>
+                        <li>Exciting atmosphere with music and performances</li>
+                        <li>Delicious local and international cuisine</li>
+                        <li>Perfect for families, friends, and networking</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title text-center">Reserve Your Spot</h5>
+            <p class="text-center">Seats fill up quickly! Don’t miss out.</p>
+            <form action="{{ url_for('book_event', event_id=event.event_id) }}" method="post">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <input type="text" name="name" class="form-control" placeholder="Your Name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="contact" class="form-control" placeholder="Contact Number" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Reserve Now</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title text-center">Event Reviews</h5>
+            {% if reviews %}
+            <ul class="list-group list-group-flush">
+                {% for review in reviews %}
+                <li class="list-group-item">
+                    <strong>{{ review.user_name }}</strong> ({{ review.review_date.strftime('%d %B %Y') }})
+                    <p>{{ review.feedback }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-center text-muted">No reviews yet. Be the first to share your experience!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
