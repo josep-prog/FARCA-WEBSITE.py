@@ -1,0 +1,68 @@
+CTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Food - FARCA</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/scripts.js" defer></script>
+</head>
+<body>
+    {% extends 'base.html' %}
+    {% block content %}
+
+    <div class="container">
+        <h1 class="text-center mt-5">Order Food</h1>
+        <p class="text-center">Welcome to FARCA's online food ordering service. Enjoy our delicious menu items tailored to the taste of Rusizi District residents.</p>
+
+        <div class="menu-section">
+            <h2 class="text-center">Our Menu</h2>
+            <p class="text-center">Explore a wide range of dishes, including local favorites and international cuisine.</p>
+
+            <div class="menu-grid">
+                {% for item in menu_items %}
+                <div class="menu-item">
+                    <img src="/static/images/menu/{{ item.image }}" alt="{{ item.name }}" class="menu-item-image">
+                    <h3 class="menu-item-title">{{ item.name }}</h3>
+                    <p class="menu-item-description">{{ item.description }}</p>
+                    <p class="menu-item-price">Price: {{ item.price }} RWF</p>
+
+                    <form action="/order_food" method="POST" class="order-form">
+                        <label for="quantity-{{ item.id }}">Quantity:</label>
+                        <input type="number" id="quantity-{{ item.id }}" name="quantity" min="1" value="1" required>
+
+                        <input type="hidden" name="food_item_id" value="{{ item.id }}">
+                        <button type="submit" class="btn btn-primary">Order Now</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="delivery-info">
+            <h2>Delivery Information</h2>
+            <p>Enjoy free delivery in Kamembe and Gihundwe. For other areas in Rusizi, a delivery fee of 1,500 RWF applies.</p>
+            <p>Orders will be prepared and delivered promptly, with SMS notifications to keep you updated.</p>
+        </div>
+
+        <div class="local-specials">
+            <h2>Local Favorites</h2>
+            <p>Don't miss our selection of dishes inspired by the culinary traditions of Rusizi and Rwanda. Fresh, local, and full of flavor!</p>
+            <ul>
+                <li>Isombe with Fish</li>
+                <li>Brochettes (Goat and Chicken)</li>
+                <li>Umutsima (Cassava Bread) with Beans</li>
+                <li>Igisafuriya (Traditional Stew)</li>
+            </ul>
+        </div>
+
+        <div class="contact-support">
+            <h2>Need Help?</h2>
+            <p>If you have any questions or special requests, feel free to contact our support team at <strong>+250 789 221 794</strong>.</p>
+        </div>
+    </div>
+
+    {% endblock %}
+</body>
+</html>
+
