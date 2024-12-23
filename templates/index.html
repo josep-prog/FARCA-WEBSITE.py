@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to FARCA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/script.js" defer></script>
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block content %}
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Welcome to FARCA</h1>
+            <p>Your ultimate destination for relaxation, delicious food, and unforgettable events.</p>
+            <a href="#services" class="btn btn-primary">Explore Services</a>
+        </div>
+    </header>
+
+    <section id="services" class="services">
+        <h2 class="section-title">Our Services</h2>
+        <div class="services-container">
+            <div class="service-card">
+                <img src="/static/images/food.jpg" alt="Food Service">
+                <h3>Delicious Food</h3>
+                <p>Enjoy a wide range of dishes prepared with the freshest ingredients.</p>
+                <a href="/menu" class="btn btn-secondary">View Menu</a>
+            </div>
+            <div class="service-card">
+                <img src="/static/images/rooms.jpg" alt="Room Service">
+                <h3>Cozy Rooms</h3>
+                <p>Relax in our well-furnished rooms available for daily or monthly booking.</p>
+                <a href="/rooms" class="btn btn-secondary">Book a Room</a>
+            </div>
+            <div class="service-card">
+                <img src="/static/images/events.jpg" alt="Events">
+                <h3>Memorable Events</h3>
+                <p>Celebrate your special moments with us at FARCA.</p>
+                <a href="/events" class="btn btn-secondary">Explore Events</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="highlights" class="highlights">
+        <h2 class="section-title">Why Choose FARCA?</h2>
+        <div class="highlights-container">
+            <div class="highlight">
+                <img src="/static/images/location.jpg" alt="Prime Location">
+                <h3>Prime Location</h3>
+                <p>Situated in the heart of Rusizi, FARCA is easily accessible for everyone.</p>
+            </div>
+            <div class="highlight">
+                <img src="/static/images/affordable.jpg" alt="Affordable Rates">
+                <h3>Affordable Rates</h3>
+                <p>We offer competitive prices for food, rooms, and event services.</p>
+            </div>
+            <div class="highlight">
+                <img src="/static/images/service.jpg" alt="Quality Service">
+                <h3>Quality Service</h3>
+                <p>Our staff is dedicated to providing top-notch customer service.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="feedback" class="feedback">
+        <h2 class="section-title">What Our Customers Say</h2>
+        <div class="feedback-carousel">
+            <div class="feedback-item">
+                <p>"The food here is amazing! The staff is friendly and the atmosphere is perfect."</p>
+                <span>- John Doe</span>
+            </div>
+            <div class="feedback-item">
+                <p>"I had the best experience at FARCA. Highly recommend their event services."</p>
+                <span>- Jane Smith</span>
+            </div>
+            <div class="feedback-item">
+                <p>"The rooms are clean and comfortable. I loved my stay here!"</p>
+                <span>- Alex M.</span>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="social-media">
+                <a href="#"><img src="/static/icons/facebook.png" alt="Facebook"></a>
+                <a href="#"><img src="/static/icons/twitter.png" alt="Twitter"></a>
+                <a href="#"><img src="/static/icons/instagram.png" alt="Instagram"></a>
+            </div>
+            <p>&copy; 2024 FARCA. All rights reserved.</p>
+        </div>
+    </footer>
+    {% endblock %}
+</body>
+</html>
