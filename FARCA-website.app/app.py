@@ -2,22 +2,26 @@ from flask import Flask, session, render_template, request, jsonify, flash, redi
 from flaskext.mysql import MySQL
 import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from utils import send_email_notification, send_sms_notification, calculate_delivery_cost
 
 # Initialize Flask app and MySQL
 app = Flask(__name__)
 app.secret_key = 'farca2024'
-app.config['MYSQL_DATABASE_USER'] = 'root'  # Replace with your MySQL username
-app.config['MYSQL_DATABASE_PASSWORD'] = 'password'  # Replace with your MySQL password
+app.config['MYSQL_DATABASE_USER'] = 'root'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'k@#+ymej@AQ@3'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-app.config['MYSQL_DATABASE_DB'] = 'FARCA'  # Database name
+app.config['MYSQL_DATABASE_DB'] = 'FARCA'
 mysql = MySQL(app)
 
-# Utility functions
+# Utility Functions
 def check_logged_in():
     return session.get('logged_in', False)
 
 def get_current_user():
     return session.get('username', None)
+
+def is_admin():
+    return session.get('role') == 'admin'
 
 # Routes
 @app.route('/')
@@ -27,7 +31,6 @@ def home():
     conn = mysql.connect()
     cursor = conn.cursor()
 
-    # Fetch menu items and events
     cursor.execute("SELECT * FROM Menu_Items")
     menu_items = cursor.fetchall()
 
@@ -36,6 +39,32 @@ def home():
 
     conn.close()
     return render_template('home.html', menu=menu_items, events=events)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration page."""
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        role = request.form['role']  # "customer" or "admin"
+
+        hashed_password = generate_password_hash(password)
+        conn = mysql.connect()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                "INSERT INTO Users (username, password, role) VALUES (%s, %s, %s)",
+                (username, hashed_password, role)
+            )
+            conn.commit()
+            flash('Registration successful! Please log in.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            flash(f'Registration failed: {str(e)}', 'danger')
+        finally:
+            conn.close()
+    return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -46,12 +75,13 @@ def login():
 
         conn = mysql.connect()
         cursor = conn.cursor()
-        cursor.execute("SELECT username, password FROM Users WHERE username = %s", (username,))
+        cursor.execute("SELECT username, password, role FROM Users WHERE username = %s", (username,))
         user = cursor.fetchone()
 
         if user and check_password_hash(user[1], password):
             session['logged_in'] = True
-            session['username'] = username
+            session['username'] = user[0]
+            session['role'] = user[2]
             flash('Login successful!', 'success')
             return redirect(url_for('home'))
         else:
@@ -76,17 +106,25 @@ def order():
         food_item = request.form['food_item']
         quantity = request.form['quantity']
         contact = request.form['contact']
+        location = request.form['location']
+
+        delivery_cost = calculate_delivery_cost(location)
 
         conn = mysql.connect()
         cursor = conn.cursor()
 
         try:
-            # Insert the order into the database
             cursor.execute(
-                "INSERT INTO Orders (food_item, quantity, contact, order_date) VALUES (%s, %s, %s, %s)",
-                (food_item, quantity, contact, datetime.datetime.now())
+                """
+                INSERT INTO Orders (food_item, quantity, contact, location, delivery_cost, order_date)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (food_item, quantity, contact, location, delivery_cost, datetime.datetime.now())
             )
             conn.commit()
+            order_id = cursor.lastrowid
+
+            send_sms_notification(contact, f"Your order #{order_id} has been placed successfully!")
             flash('Order placed successfully! The kitchen will contact you shortly.', 'success')
         except Exception as e:
             flash(f"Failed to place order: {str(e)}", 'danger')
@@ -101,13 +139,14 @@ def feedback():
     if request.method == 'POST':
         name = request.form['name']
         comment = request.form['comment']
+        rating = request.form['rating']  # New field for rating
 
         conn = mysql.connect()
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO Feedback (name, comment, feedback_date) VALUES (%s, %s, %s)",
-                (name, comment, datetime.datetime.now())
+                "INSERT INTO Feedback (name, comment, rating, feedback_date) VALUES (%s, %s, %s, %s)",
+                (name, comment, rating, datetime.datetime.now())
             )
             conn.commit()
             flash('Feedback submitted successfully. Thank you!', 'success')
@@ -127,15 +166,15 @@ def logout():
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     """Admin page to manage menu items and view feedback."""
-    if not check_logged_in():
-        flash('Please log in to access the admin panel.', 'danger')
+    if not check_logged_in() or not is_admin():
+        flash('Unauthorized access. Admins only.', 'danger')
         return redirect(url_for('login'))
 
     conn = mysql.connect()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Menu_Items")
     menu_items = cursor.fetchall()
-    
+
     cursor.execute("SELECT * FROM Feedback ORDER BY feedback_date DESC")
     feedbacks = cursor.fetchall()
 
@@ -154,41 +193,12 @@ def server_error(e):
 if __name__ == '__main__':
     app.run(debug=True)
 
-# Booking Expense Processing
-@app.route('/process_expense', methods=['GET', 'POST'])
-def process_expense():
-    """Process and record expenses for a booking."""
-    data_params = request.get_json()
-    booking_id = int(data_params['booking_id'])
-    date = datetime.datetime.strptime(data_params['date'], '%Y-%m-%d')
-
-    conn = mysql.connect()
-    cursor = conn.cursor()
-
-    if date > datetime.datetime.today():
-        flash("Expense date cannot be in the future.", 'danger')
-    else:
-        try:
-            # Insert expense record into the database
-            cursor.execute(
-                "INSERT INTO expenses (booking_id, expense_date, amount, description) VALUES (%s, %s, %s, %s)",
-                (booking_id, date, data_params['amount'], data_params['description'])
-            )
-            conn.commit()
-            flash(f"Expense recorded successfully for booking {booking_id}.", 'success')
-        except Exception as e:
-            flash(f"Failed to record expense: {str(e)}", 'danger')
-        finally:
-            conn.close()
-
-    return jsonify(dict(redirect='/booking_details', booking_id=booking_id))
-
-# Booking Details View
+# Fetch expenses for the booking
 @app.route('/booking_details')
 def booking_details():
     """View details for a specific booking."""
     booking_id = request.args.get('booking_id')
-    if not check_logged_in(session):
+    if not check_logged_in():
         return redirect(url_for('login'))
 
     conn = mysql.connect()
@@ -218,7 +228,7 @@ def booking_details():
 @app.route('/event_reviews/<int:page>')
 def event_reviews(page=0):
     """Display reviews for events hosted at FARCA."""
-    if not check_logged_in(session):
+    if not check_logged_in():
         return redirect(url_for('login'))
 
     conn = mysql.connect()
@@ -248,7 +258,7 @@ def event_reviews(page=0):
 @app.route('/update_order_status/<string:order_id>/<string:status>')
 def update_order_status(order_id, status):
     """Update the status of an order."""
-    if not check_logged_in(session):
+    if not check_logged_in():
         return redirect(url_for('login'))
 
     conn = mysql.connect()
@@ -316,46 +326,41 @@ def update_event():
 
     return jsonify(dict(redirect='/event_reviews', page=0))
 
+# Update Customer Feedback
 @app.route('/update_customer_feedback')
 def update_customer_feedback():
-    """Update the status or details of customer feedback for FARCA's services"""
-    print('In update_customer_feedback')
+    """Update the status or details of customer feedback for FARCA's services."""
     feedback_id = request.args.get('feedback_id')
-    print(f"Updating feedback info for feedback {feedback_id}")
     return render_template('update_feedback.html', feedback_id=feedback_id)
-
 
 @app.route('/go2UpdateCustomerFeedback', methods=['GET', 'POST'])
 def go2UpdateCustomerFeedback():
-    """Handle updating feedback details for FARCA's feedback database"""
-    print('In go2UpdateCustomerFeedback')
+    """Handle updating feedback details for FARCA's feedback database."""
     data_params = request.get_json()
-    print(data_params)
     conn = mysql.connect()
     cursor = conn.cursor()
-    feedback_id = int(data_params['feedback_id'].replace('update_feedback?feedback_id=', ''))
+    feedback_id = int(data_params['feedback_id'])
 
     try:
-        # Update feedback details in the database
         cursor.execute("""
             UPDATE feedback
             SET feedback_text = %s, status = %s, updated_at = NOW()
             WHERE feedback_id = %s
         """, (data_params['feedback_text'], data_params['status'], feedback_id))
         conn.commit()
-        print(cursor.rowcount, "Feedback updated successfully in the database")
-        conn.close()
         flash(f"Success! Feedback ID {feedback_id} updated.")
     except Exception as e:
         flash(f"Failed to update feedback info due to: {str(e)}")
+    finally:
+        conn.close()
 
     return jsonify(dict(redirect='/customer_feedback', feedback_id=feedback_id))
 
-
+# Book Room
 @app.route('/book_room/<int:room_id>', methods=['GET', 'POST'])
 def book_room(room_id):
-    """Manage room bookings for FARCA"""
-    if not check_loggin(session):
+    """Manage room bookings for FARCA."""
+    if not check_logged_in():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
@@ -364,7 +369,7 @@ def book_room(room_id):
         customer_contact = booking_details['contact']
         booking_date = booking_details['date']
         booking_time = booking_details['time']
-        
+
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute("""
@@ -375,23 +380,23 @@ def book_room(room_id):
         conn.close()
 
         flash(f"Room {room_id} booked successfully!")
-        return redirect(url_for('index'))
+        return redirect(url_for('home'))
 
     return render_template('book_room.html', room_id=room_id)
 
-
+# Order Food
 @app.route('/order_food', methods=['GET', 'POST'])
 def order_food():
-    """Manage food orders for FARCA"""
-    if not check_loggin(session):
+    """Manage food orders for FARCA."""
+    if not check_logged_in():
         return redirect(url_for('login'))
-    
+
     if request.method == 'POST':
         order_details = request.form
         food_item_id = order_details['food_item_id']
         quantity = order_details['quantity']
-        customer_name = session.get('user')
-        
+        customer_name = session.get('username')
+
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute("""
@@ -401,10 +406,48 @@ def order_food():
         conn.commit()
         conn.close()
 
-        flash("Order placed successfully!")
-        return redirect(url_for('index'))
+        flash("Food order placed successfully.", 'success')
+        return redirect(url_for('menu'))
+
+    return render_template('order_food.html')
+
+@app.route('/order_food', methods=['GET', 'POST'])
+def order_food():
+    """Manage food orders for FARCA."""
+    if not check_logged_in():
+        flash("Please log in to place an order.", "danger")
+        return redirect(url_for('login'))
     
-    # Fetch available menu items for ordering
+    if request.method == 'POST':
+        try:
+            order_details = request.form
+            food_item_id = order_details['food_item_id']
+            quantity = int(order_details['quantity'])
+            customer_name = session.get('username')
+
+            if not customer_name:
+                flash("You must be logged in to place an order.", "danger")
+                return redirect(url_for('login'))
+
+            conn = mysql.connect()
+            cursor = conn.cursor()
+
+            # Insert the order into the database
+            cursor.execute("""
+                INSERT INTO orders (food_item_id, quantity, customer_name, order_date)
+                VALUES (%s, %s, %s, NOW())
+            """, (food_item_id, quantity, customer_name))
+            conn.commit()
+
+            flash("Order placed successfully!", "success")
+        except Exception as e:
+            flash(f"Failed to place order: {str(e)}", "danger")
+        finally:
+            conn.close()
+
+        return redirect(url_for('menu'))
+    
+    # Fetch active menu items for ordering
     conn = mysql.connect()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM menu WHERE active=1")
@@ -416,58 +459,84 @@ def order_food():
 
 @app.route('/event_details/<int:event_id>')
 def event_details(event_id):
-    """Display details of a specific FARCA event"""
-    if not check_loggin(session):
+    """Display details of a specific FARCA event."""
+    if not check_logged_in():
+        flash("Please log in to view event details.", "danger")
         return redirect(url_for('login'))
 
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM events WHERE event_id=%s", (event_id,))
-    event = cursor.fetchone()
-    conn.close()
+
+    try:
+        cursor.execute("SELECT * FROM events WHERE event_id=%s", (event_id,))
+        event = cursor.fetchone()
+        if not event:
+            flash("Event not found.", "danger")
+            return redirect(url_for('home'))
+    except Exception as e:
+        flash(f"Failed to fetch event details: {str(e)}", "danger")
+    finally:
+        conn.close()
 
     return render_template('event_details.html', event=event)
 
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
-    """Submit customer feedback for FARCA services"""
-    if not check_loggin(session):
+    """Submit customer feedback for FARCA services."""
+    if not check_logged_in():
+        flash("Please log in to submit feedback.", "danger")
         return redirect(url_for('login'))
 
-    feedback_data = request.form['feedback']
+    feedback_text = request.form['feedback']
+    user_id = session.get('user_id')
+
+    if not user_id:
+        flash("Invalid user session. Please log in again.", "danger")
+        return redirect(url_for('login'))
+
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO feedback (user_id, feedback_text, created_at)
-        VALUES (%s, %s, NOW())
-    """, (session.get('user_id'), feedback_data))
-    conn.commit()
-    conn.close()
 
-    flash("Thank you for your feedback!")
-    return redirect(url_for('index'))
+    try:
+        cursor.execute("""
+            INSERT INTO feedback (user_id, feedback_text, created_at)
+            VALUES (%s, %s, NOW())
+        """, (user_id, feedback_text))
+        conn.commit()
+        flash("Thank you for your feedback!", "success")
+    except Exception as e:
+        flash(f"Failed to submit feedback: {str(e)}", "danger")
+    finally:
+        conn.close()
+
+    return redirect(url_for('home'))
 
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    """Handle customer contact messages for FARCA"""
+    """Handle customer contact messages for FARCA."""
     if request.method == 'POST':
         contact_details = request.form
         customer_name = contact_details['name']
         customer_email = contact_details['email']
         message = contact_details['message']
-        
+
         conn = mysql.connect()
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO contact_messages (name, email, message, submitted_at)
-            VALUES (%s, %s, %s, NOW())
-        """, (customer_name, customer_email, message))
-        conn.commit()
-        conn.close()
 
-        flash("Your message has been sent successfully!")
+        try:
+            cursor.execute("""
+                INSERT INTO contact_messages (name, email, message, submitted_at)
+                VALUES (%s, %s, %s, NOW())
+            """, (customer_name, customer_email, message))
+            conn.commit()
+            flash("Your message has been sent successfully!", "success")
+        except Exception as e:
+            flash(f"Failed to send message: {str(e)}", "danger")
+        finally:
+            conn.close()
+
         return redirect(url_for('contact'))
-    
+
     return render_template('contact.html')
