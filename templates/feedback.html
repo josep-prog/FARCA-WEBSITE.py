@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Feedback - FARCA Resto-Bar</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to external CSS for styling -->
+</head>
+<body>
+
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="menu.html">Menu</a></li>
+                <li><a href="rooms.html">Rooms</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li><a href="feedback.html" class="active">Feedback</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="feedback-form">
+            <h1>We Value Your Feedback!</h1>
+            <p>Your opinion helps us improve our service. Please take a moment to share your thoughts with us.</p>
+
+            <form action="/submit-feedback" method="POST">
+                <div class="form-group">
+                    <label for="name">Your Name:</label>
+                    <input type="text" id="name" name="name" required placeholder="Enter your name">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Your Email:</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+
+                <div class="form-group">
+                    <label for="rating">How would you rate your experience?</label>
+                    <select id="rating" name="rating" required>
+                        <option value="1">1 - Poor</option>
+                        <option value="2">2 - Fair</option>
+                        <option value="3">3 - Good</option>
+                        <option value="4">4 - Very Good</option>
+                        <option value="5">5 - Excellent</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="feedback-message">Your Feedback:</label>
+                    <textarea id="feedback-message" name="feedback_message" rows="4" required placeholder="Please provide your feedback here"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="submit-btn">Submit Feedback</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 FARCA Resto-Bar. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
