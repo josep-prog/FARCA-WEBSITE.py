@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Contact Us - FARCA Resto-Bar</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to external CSS for styling -->
+</head>
+<body>
+
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="menu.html">Menu</a></li>
+                <li><a href="rooms.html">Rooms</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li><a href="feedback.html">Feedback</a></li>
+                <li><a href="contact.html" class="active">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="contact-info">
+            <h1>Contact Us</h1>
+            <p>If you have any questions or would like to get in touch, feel free to contact us via the details below:</p>
+
+            <div class="contact-details">
+                <p><strong>Phone Numbers:</strong></p>
+                <ul>
+                    <li>+250 789 221 794</li>
+                    <li>+250 791 646 062</li>
+                </ul>
+                
+                <p><strong>Email:</strong></p>
+                <ul>
+                    <li><a href="mailto:josephnishimwe398@gmail.com">josephnishimwe398@gmail.com</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="contact-form">
+            <h2>Send Us a Message</h2>
+            <p>If you prefer, you can also send us a message using the form below:</p>
+
+            <form action="/submit-contact" method="POST">
+                <div class="form-group">
+                    <label for="name">Your Name:</label>
+                    <input type="text" id="name" name="name" required placeholder="Enter your name">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Your Email:</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Your Message:</label>
+                    <textarea id="message" name="message" rows="4" required placeholder="Write your message here"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="submit-btn">Send Message</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 FARCA Resto-Bar. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
