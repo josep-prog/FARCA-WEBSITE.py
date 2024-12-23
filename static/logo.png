@@ -1,0 +1,16 @@
+from tkinter import *
+
+# Create the main window
+window = Tk()
+window.title('Display Image')  # Title of the window
+
+# Set the dimensions for the canvas
+canvas = Canvas(window, width=450, height=450)
+canvas.pack()
+
+# Provide the new path for your image
+image = PhotoImage(file='C:\\New folder\\logo.png')  # Update with your actual image name and extension
+canvas.create_image(0, 0, anchor=NW, image=image)
+
+# Start the GUI event loop
+window.mainloop()
